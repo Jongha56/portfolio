@@ -69,14 +69,137 @@
 ---
 **2. 직접 구현한 기능**
  * BossController.cs
+ ```c#
+ //보스몬스터와 플레이어간의 위치를 비교해서 보스몬스터가 플레이어로부터 어느 위치에 있는지 받아
+ //Attaking함수로 보스의 공격모션을 플레이어가 있는 곳을 향할 수 있게 구현하였습니다.
+ private void Attacking(string _direction)
+ {
+     switch (_direction)
+     {
+         case "UP":
+             animator.SetTrigger("AttackUp"); //trigger기때문에 true, false값이 필요없이 실행가능
+             break;
+         case "DOWN":
+             animator.SetTrigger("AttackDown");
+             break;
+         case "RIGHT":
+             animator.SetTrigger("AttackRight");
+             break;
+         case "LEFT":
+             animator.SetTrigger("AttackLeft");
+             break;
+     }
+     StartCoroutine(WaitCoroutine());
+ }
+ private void BossPossition()
+ {
+     PlayerPos = PlayerManager.instance.transform.position;
+
+     if (PlayerPos.x > this.transform.position.x)
+         Boss_dir = "RIGHT";
+     else if (PlayerPos.x < this.transform.position.x)
+         Boss_dir = "LEFT";
+
+     if (PlayerPos.y > this.transform.position.y)
+         Boss_dir = "UP";
+     else if (PlayerPos.y < this.transform.position.y)
+         Boss_dir = "DOWN";
+ }
+ ```
+ 
  * Close_Door.cs
+ ```c#
+ //OnTriggerStay2D를 사용해 해당 캐릭터가 지정한 칸 안에 머무르고 있을경우에 실행할수 있게 설정하였고, 그 칸안에서
+ //처음 한번만 실행할 수 있게 flag 를 false로 초기화시킨 후 캐릭터가 위를 보고있고, z키를 누를경우 이벤트가 발동해서
+ //flag를 true로 바꿔 다시 이벤트가 발동하지 않도록 막고, 문이 잠겨있다는 대화창을 띄우도록 구현하였습니다.
+ private void OnTriggerStay2D(Collider2D collision)
+ {
+     if (!flag && Input.GetKey(KeyCode.Z) && thePlayer.animator.GetFloat("DirY") == 1f)
+     {
+         flag = true;
+         StartCoroutine(EventCoroutine());
+     }
+ }
+ IEnumerator EventCoroutine()
+ {
+     theOrder.PreLoadCharacter();
+     theOrder.NotMove();
+
+     theDM.ShowDialogue(dialogue_1);
+     yield return new WaitUntil(() => !theDM.talking); //대화가 끝날때까지 대기하다가 끝나면 밑문장 실행
+
+     theOrder.Move();
+ }
+ ```
  * NeedItemOpen.cs
+ ```c#
+ //특정한 장소로 이동하기 위해서 플레이어가 문을열때 그 문을 열 수 있는 ID를 가진 아이템을 보유하고 있는지
+ //확인하기 위한 코드입니다. inventoryItemList를 확인해서 특정 아이템을 보유하고 있으면 Exist_Item을 true로
+ //바꿔 특정 장소를 이동할 수 있게 구현하였습니다.
+ private void OnTriggerStay2D(Collider2D collision)
+ {
+     if (collision.gameObject.name == "Player")
+     {
+         for(int i = 0; i < theInven.inventoryItemList.Count; i++)
+         {
+             if (Need_ItemID == theInven.inventoryItemList[i].itemID)
+             {
+                 Exist_Item = true;
+                 flag = false;
+                 break;
+             }
+         }
+         if (!flag && Input.GetKeyDown(KeyCode.Z))
+         {
+             if (Exist_Item)
+             {
+                 StartCoroutine(TransferCoroutine());
+             }
+             else
+             {
+                 flag = true;
+                 StartCoroutine(NotTransferCoroutine());
+             }
+         }
+     }
+ }
+ ```
  * Potal.cs
+ ```c#
+ //포탈도 NeedItemOpen과 마찬가지로 특정아이템이 인벤토리 안에 있는지 확인해
+ //있는 경우에만 포탈이 열려 보스방으로 들어갈 수 있게 구현하였습니다.
+ void Update()
+ {
+     for(int i = 0; i < theInven.inventoryItemList.Count; i++)
+     {
+         if (portal_key == theInven.inventoryItemList[i].itemID)
+         {
+             portal.SetActive(true);
+             ani_portal.SetBool("Open", true);
+         }
+         else
+         {
+             portal.SetActive(false);
+         }
+     }
+ }
+ ```
  * TestLightOff.cs
+ ```c#
+ //SetActive(false), SetActive(true)를 사용해 맵정도의 크기의 손전등 이미지를 게임 오브젝트로사용하여
+ //불을 키고 끄는 기능을 구현하였습니다.
+ private void OnTriggerEnter2D(Collider2D collision)
+ {
+     if (flag)
+     {
+         go.SetActive(false);
+     }
+ }
+ ```
  * Equipment.cs
  ```c#
  //Equipment.cs 에서 아이템을 바꿔 장착할 시 캐릭터의 스텟이 계속 더해져서 오르는 오류가 발생했는데,
- //EquipItemCheck함수에서 장착된 아이템이 있는 경우 TakeOffEffect함수를 사용해 스탯을 감소해줌으로써 오류를 해결하였다.
+ //EquipItemCheck함수에서 장착된 아이템이 있는 경우 TakeOffEffect함수를 사용해 스탯을 감소해줌으로써 오류를 해결하였습니다.
  public void EquipItemCheck(int _count, Item _item) //아이템 장착 함수
  {
      if (equipItemList[_count].itemID == 0) //장착된 아이템이 없을경우
@@ -95,5 +218,7 @@
      ShowTxT(); 
  }
 ```
+---
+**3. 출처**
 
-
+[케이디의 유니티강좌 2D 쯔꾸르퐁 게임 만들기](https://www.youtube.com/watch?v=EdsVx9yN2Cc&list=PLUZ5gNInsv_NW8RQx8__0DxiuPZn3VDzP)
