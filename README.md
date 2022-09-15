@@ -67,12 +67,33 @@
   * TestScript2.cs : BGM의 Fade In / Out 효과가 잘 되는지 확인
   * TestTextDialogue.cs : 이벤트 발생 시 간단한 텍스트 출력과 캐릭터의 움직임 제어 확인
 ---
+**2. 직접 구현한 기능**
+ * BossController.cs
+ * Close_Door.cs
+ * NeedItemOpen.cs
+ * Potal.cs
+ * TestLightOff.cs
+ * Equipment.cs
+ ```c#
+ //Equipment.cs 에서 아이템을 바꿔 장착할 시 캐릭터의 스텟이 계속 더해져서 오르는 오류가 발생했는데,
+ //EquipItemCheck함수에서 장착된 아이템이 있는 경우 TakeOffEffect함수를 사용해 스탯을 감소해줌으로써 오류를 해결하였다.
+ public void EquipItemCheck(int _count, Item _item) //아이템 장착 함수
+ {
+     if (equipItemList[_count].itemID == 0) //장착된 아이템이 없을경우
+     {
+         equipItemList[_count] = _item; //장착할 아이템 장착
+     }
+     else //장착된 아이템이 있는경우
+     {
+         theInven.EquipToInventory(equipItemList[_count]); //장착하고 있던 아이템을 해제한 후 인벤토리에 넣어주고
+         TakeOffEffect(equipItemList[_count]); 
+         equipItemList[_count] = _item; //장착할 아이템 장착
+     }
 
-  
-  
-  
-  
-
-
+     EquipEffect(_item); //장착한 아이템의 스텟만큼 캐릭터 스탯증가
+     theAudio.Play(equip_sound);
+     ShowTxT(); 
+ }
+```
 
 
